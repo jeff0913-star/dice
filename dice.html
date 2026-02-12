@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>簡易骰子遊戲</title>
+    <style>
+        /* --- 頁面基本樣式 --- */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #2c3e50;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            flex-direction: column;
+            color: white;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        /* --- 遊戲容器 --- */
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        /* --- 骰子區域 --- */
+        .dice-wrapper {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        /* --- 單顆骰子設計 (使用 Grid 佈局畫點) --- */
+        .die {
+            width: 100px;
+            height: 100px;
+            background-color: #ecf0f1;
+            border-radius: 15px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1), 0 5px 10px rgba(0,0,0,0.2);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        /* --- 骰子上的紅點 --- */
+        .dot {
+            width: 20px;
+            height: 20px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            align-self: center;
+            justify-self: center;
+            display: none; /* 預設隱藏所有點 */
+        }
+
+        /* --- 控制不同點數顯示哪些點 --- */
+        /* 1點: 中間 */
+        .die[data-face="1"] .dot:nth-child(5) { display: block; }
+
+        /* 2點: 左上、右下 */
+        .die[data-face="2"] .dot:nth-child(1),
+        .die[data-face="2"] .dot:nth-child(9) { display: block; }
+
+        /* 3點: 左上、中間、右下 */
+        .die[data-face="3"] .dot:nth-child(1),
+        .die[data-face="3"] .dot:nth-child(5),
+        .die[data-face="3"] .dot:nth-child(9) { display: block; }
+
+        /* 4點: 四個角落 */
+        .die[data-face="4"] .dot:nth-child(1),
+        .die[data-face="4"] .dot:nth-child(3),
+        .die[data-face="4"] .dot:nth-child(7),
+        .die[data-face="4"] .dot:nth-child(9) { display: block; }
+
+        /* 5點: 四個角落 + 中間 */
+        .die[data-face="5"] .dot:nth-child(1),
+        .die[data-face="5"] .dot:nth-child(3),
+        .die[data-face="5"] .dot:nth-child(5),
+        .die[data-face="5"] .dot:nth-child(7),
+        .die[data-face="5"] .dot:nth-child(9) { display: block; }
+
+        /* 6點: 兩排 */
+        .die[data-face="6"] .dot:nth-child(1),
+        .die[data-face="6"] .dot:nth-child(3),
+        .die[data-face="6"] .dot:nth-child(4),
+        .die[data-face="6"] .dot:nth-child(6),
+        .die[data-face="6"] .dot:nth-child(7),
+        .die[data-face="6"] .dot:nth-child(9) { display: block; }
+
+        /* --- 搖動動畫 --- */
+        .shake {
+            animation: shake-anim 0.5s;
+        }
+
+        @keyframes shake-anim {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(15deg); }
+            50% { transform: rotate(-15deg); }
+            75% { transform: rotate(5deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* --- 按鈕與總分 --- */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        #total-score {
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>🎲 幸運骰子 🎲</h1>
+        
+        <div class="dice-wrapper">
+            <div class="die" id="die-1" data-face="1">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            <div class="die" id="die-2" data-face="6">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div id="total-score">總分: 7</div>
+            <button onclick="rollDice()" id="roll-btn">擲骰子</button>
+        </div>
+    </div>
+
+    <script>
+        function rollDice() {
+            const die1 = document.getElementById('die-1');
+            const die2 = document.getElementById('die-2');
+            const scoreText = document.getElementById('total-score');
+            const btn = document.getElementById('roll-btn');
+
+            // 1. 播放動畫前，先鎖定按鈕避免重複點擊
+            btn.disabled = true;
+            btn.innerText = "搖動中...";
+            
+            // 2. 加入搖動動畫 class
+            die1.classList.add('shake');
+            die2.classList.add('shake');
+
+            // 3. 設定延遲（等待動畫結束後才改變數字）
+            setTimeout(() => {
+                // 產生 1 到 6 的隨機數字
+                const roll1 = Math.floor(Math.random() * 6) + 1;
+                const roll2 = Math.floor(Math.random() * 6) + 1;
+
+                // 更新骰子的 data-face 屬性（CSS 會根據這個屬性改變圓點顯示）
+                die1.setAttribute('data-face', roll1);
+                die2.setAttribute('data-face', roll2);
+
+                // 更新總分
+                scoreText.innerText = `總分: ${roll1 + roll2}`;
+
+                // 移除動畫 class，這樣下次才能再次觸發
+                die1.classList.remove('shake');
+                die2.classList.remove('shake');
+
+                // 恢復按鈕
+                btn.disabled = false;
+                btn.innerText = "擲骰子";
+
+            }, 500); // 500毫秒 = 0.5秒，配合 CSS 動畫時間
+        }
+    </script>
+</body>
+</html>
